@@ -1492,30 +1492,49 @@ SidebarConnection.onMessage.addListener(async (windowId, message) => {
       if (!tab)
         return;
 
-      // Store tab metadata before closing
+      // Store complete tab metadata before closing
       const tabData = {
+        id: tab.id,
         url: tab.url,
         title: tab.title,
         favIconUrl: tab.favIconUrl,
-        parentId: tab.$TST.parent?.id || null,
+        windowId: tab.windowId,
         index: tab.index,
         hibernatedAt: Date.now(),
-        // Preserve tree structure
-        children: tab.$TST.children.map(child => child.id)
+        // Preserve complete tree structure
+        parentId: tab.$TST.parent?.id || null,
+        ancestors: tab.$TST.ancestors.map(t => t.id),
+        children: tab.$TST.children.map(t => t.id),
+        descendants: tab.$TST.descendants.map(t => t.id),
+        // Store position in tree
+        level: tab.$TST.level,
+        // Store any other important states
+        pinned: tab.pinned,
+        cookieStoreId: tab.cookieStoreId,
       };
 
       // Store in browser.storage.local
       const storage = await browser.storage.local.get('hibernatedTabs');
       const hibernatedTabs = storage.hibernatedTabs || {};
-      hibernatedTabs[message.tabId] = tabData;
+      hibernatedTabs[tab.id] = tabData;
       await browser.storage.local.set({ hibernatedTabs });
 
-      // Mark tab as hibernated before closing
+      // Mark tab as hibernated (this prevents removal from sidebar on close)
       tab.$TST.addState(Constants.kTAB_STATE_HIBERNATED);
 
-      // Don't actually close the tab yet - just mark it as hibernated
-      // TODO: Implement proper hibernation logic
-      log('Tab hibernated:', message.tabId, tabData);
+      // Notify sidebar to mark this tab as closed but keep it visible
+      SidebarConnection.sendMessage({
+        type: 'treestyletab:tab-hibernated',
+        windowId: tab.windowId,
+        tabId: tab.id,
+        tabData
+      });
+
+      log('Tab hibernated and will be closed:', tab.id, tabData);
+
+      // Actually close the browser tab
+      // The sidebar should keep the item visible even after the tab closes
+      browser.tabs.remove(tab.id).catch(ApiTabs.createErrorHandler(ApiTabs.handleMissingTabError));
     }; break;
 
     case 'treestyletab:remove-hibernated-tab': {
@@ -1529,15 +1548,76 @@ SidebarConnection.onMessage.addListener(async (windowId, message) => {
       delete hibernatedTabs[message.tabId];
       await browser.storage.local.set({ hibernatedTabs });
 
-      // If tab is hibernated, just remove the element
-      // If tab is still open, close it
+      // If tab is hibernated, remove it from Tab store and sidebar
       if (tab.$TST.states.has(Constants.kTAB_STATE_HIBERNATED)) {
-        // TODO: Remove the tab element from sidebar
         log('Removing hibernated tab from list:', message.tabId);
+        // Remove the tab from the Tab store
+        // This will trigger removal from the sidebar
+        tab.$TST.destroy();
       } else {
-        // Close the actual tab
+        // Close the actual browser tab
         browser.tabs.remove(message.tabId).catch(ApiTabs.createErrorHandler(ApiTabs.handleMissingTabError));
       }
+    }; break;
+
+    case 'treestyletab:restore-tab': {
+      const tab = Tab.get(message.tabId);
+      if (!tab || !tab.$TST.states.has(Constants.kTAB_STATE_HIBERNATED))
+        return;
+
+      // Get hibernated tab data from storage
+      const storage = await browser.storage.local.get('hibernatedTabs');
+      const hibernatedTabs = storage.hibernatedTabs || {};
+      const tabData = hibernatedTabs[message.tabId];
+
+      if (!tabData) {
+        log('No hibernated data found for tab:', message.tabId);
+        return;
+      }
+
+      log('Restoring hibernated tab:', message.tabId, tabData);
+
+      // Remove hibernated state before creating new tab
+      tab.$TST.removeState(Constants.kTAB_STATE_HIBERNATED);
+
+      // Create new browser tab with same URL and properties
+      const createProperties = {
+        url: tabData.url,
+        index: tabData.index,
+        cookieStoreId: tabData.cookieStoreId,
+        windowId: tabData.windowId,
+        active: false  // Don't steal focus
+      };
+
+      if (tabData.pinned) {
+        createProperties.pinned = true;
+      }
+
+      const newTab = await browser.tabs.create(createProperties);
+
+      // Wait for the new tab to be tracked by TST
+      await Tab.waitUntilTracked(newTab.id);
+
+      // Restore tree structure
+      if (tabData.parentId) {
+        const parent = Tab.get(tabData.parentId);
+        if (parent) {
+          await Tree.attachTabTo(Tab.get(newTab.id), parent, {
+            broadcast: true,
+            insertBefore: null,  // Will be positioned based on index
+            forceExpand: false
+          });
+        }
+      }
+
+      // Remove from hibernated storage
+      delete hibernatedTabs[message.tabId];
+      await browser.storage.local.set({ hibernatedTabs });
+
+      // Remove the old hibernated tab item from sidebar
+      tab.$TST.destroy();
+
+      log('Tab restored successfully:', newTab.id);
     }; break;
   }
 });

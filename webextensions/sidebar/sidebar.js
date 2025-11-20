@@ -1210,6 +1210,17 @@ BackgroundConnection.onMessage.addListener(async message => {
     case Constants.kCOMMAND_NOTIFY_TABS_HIGHLIGHTING_COMPLETE:
       Notifications.remove('tabs-highlighing-progress');
       break;
+
+    case 'treestyletab:tab-hibernated': {
+      // Tab was closed but should remain visible in sidebar
+      await Tab.waitUntilTracked(message.tabId);
+      const tab = Tab.get(message.tabId);
+      if (tab) {
+        // Tab element will remain in DOM even after browser tab closes
+        // CSS will handle grayed-out appearance via .hibernated class
+        log('Tab hibernated, will remain visible:', message.tabId);
+      }
+    }; break;
   }
 });
 

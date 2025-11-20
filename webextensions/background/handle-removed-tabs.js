@@ -35,6 +35,13 @@ Tab.onRemoving.addListener(async (tab, removeInfo = {}) => {
   if (removeInfo.isWindowClosing)
     return;
 
+  // If tab is hibernated, don't process tree removal logic
+  // Keep the tab in the tree as a virtual/closed tab
+  if (tab.$TST.states.has(Constants.kTAB_STATE_HIBERNATED)) {
+    log('Tab is hibernated, skipping removal logic:', dumpTab(tab));
+    return;
+  }
+
   let closeParentBehavior;
   let newParent;
   const successor = tab.$TST.possibleSuccessorWithDifferentContainer;
@@ -238,6 +245,13 @@ Tab.onRemoved.addListener((tab, info) => {
 
   if (info.isWindowClosing)
     return;
+
+  // If tab is hibernated, keep it in the Tab store as a virtual tab
+  // Don't process normal removal logic
+  if (tab.$TST.states.has(Constants.kTAB_STATE_HIBERNATED)) {
+    log('Tab is hibernated, keeping in store as virtual tab:', dumpTab(tab));
+    return;
+  }
 
   // The removing tab may be attached to another tab or
   // other tabs may be attached to the removing tab.

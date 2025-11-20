@@ -700,10 +700,24 @@ async function handleDefaultMouseUpOnTab({ lastMousedown, tab, event } = {}) {
   const onRegularArea = (
     !lastMousedown.detail.twisty &&
     !lastMousedown.detail.soundButton &&
-    !lastMousedown.detail.closebox
+    !lastMousedown.detail.closebox &&
+    !lastMousedown.detail.hibernateButton &&
+    !lastMousedown.detail.trashButton
   );
   const wasMultiselectionAction = updateMultiselectionByTabClick(tab, lastMousedown.detail);
   log(' => ', { onRegularArea, wasMultiselectionAction });
+
+  // If clicking on a hibernated tab, restore it
+  if (tab.$TST.states.has(Constants.kTAB_STATE_HIBERNATED) &&
+      onRegularArea &&
+      lastMousedown.detail.button == 0) {
+    log(' => restore hibernated tab');
+    BackgroundConnection.sendMessage({
+      type: 'treestyletab:restore-tab',
+      tabId: tab.id
+    });
+    return true;
+  }
 
   // Firefox clears tab multiselection after the mouseup, so
   // we simulate the behavior.
