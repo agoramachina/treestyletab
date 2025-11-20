@@ -62,6 +62,8 @@ import { TabFaviconElement } from './components/TabFaviconElement.js';
 import { TreeItemLabelElement } from './components/TreeItemLabelElement.js';
 import { TabSoundButtonElement } from './components/TabSoundButtonElement.js';
 import { TabTwistyElement } from './components/TabTwistyElement.js';
+import { TabHibernateElement } from './components/TabHibernateElement.js';
+import { TabTrashElement } from './components/TabTrashElement.js';
 
 function log(...args) {
   internalLogger('sidebar/sidebar', ...args);
@@ -140,6 +142,8 @@ export async function init() {
   TreeItemLabelElement.define();
   TabCounterElement.define();
   TabSoundButtonElement.define();
+  TabHibernateElement.define();
+  TabTrashElement.define();
   TreeItemElement.define();
 
   let promisedAllTabsTracked;

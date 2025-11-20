@@ -21,6 +21,8 @@ import { kTREE_ITEM_LABEL_ELEMENT_NAME } from './TreeItemLabelElement.js';
 import { kTAB_COUNTER_ELEMENT_NAME } from './TabCounterElement.js';
 import { kTAB_SOUND_BUTTON_ELEMENT_NAME } from './TabSoundButtonElement.js';
 import { kTAB_CLOSE_BOX_ELEMENT_NAME } from './TabCloseBoxElement.js';
+import { kTAB_HIBERNATE_ELEMENT_NAME } from './TabHibernateElement.js';
+import { kTAB_TRASH_ELEMENT_NAME } from './TabTrashElement.js';
 
 export const kTREE_ITEM_ELEMENT_NAME = 'tab-item';
 export const kTREE_ITEM_SUBSTANCE_ELEMENT_NAME = 'tab-item-substance';
@@ -130,6 +132,8 @@ export class TreeItemElement extends HTMLElement {
             <${kTREE_ITEM_LABEL_ELEMENT_NAME}></${kTREE_ITEM_LABEL_ELEMENT_NAME}>
             <${kTAB_COUNTER_ELEMENT_NAME}></${kTAB_COUNTER_ELEMENT_NAME}>
             <${kTAB_CLOSE_BOX_ELEMENT_NAME}></${kTAB_CLOSE_BOX_ELEMENT_NAME}>
+            <${kTAB_TRASH_ELEMENT_NAME}></${kTAB_TRASH_ELEMENT_NAME}>
+            <${kTAB_HIBERNATE_ELEMENT_NAME}></${kTAB_HIBERNATE_ELEMENT_NAME}>
           </span>
           <span class="${Constants.kEXTRA_ITEMS_CONTAINER} below"></span>
           <span class="${Constants.kEXTRA_ITEMS_CONTAINER} behind"></span>
@@ -190,6 +194,14 @@ export class TreeItemElement extends HTMLElement {
     if (this.closeBox) {
       this.closeBox.owner = this;
       this.closeBox.makeAccessible();
+    }
+    if (this.hibernateButton) {
+      this.hibernateButton.owner = this;
+      this.hibernateButton.makeAccessible();
+    }
+    if (this.trashButton) {
+      this.trashButton.owner = this;
+      this.trashButton.makeAccessible();
     }
   }
 
@@ -253,6 +265,14 @@ export class TreeItemElement extends HTMLElement {
 
   get closeBox() {
     return this.querySelector(kTAB_CLOSE_BOX_ELEMENT_NAME);
+  }
+
+  get hibernateButton() {
+    return this.querySelector(kTAB_HIBERNATE_ELEMENT_NAME);
+  }
+
+  get trashButton() {
+    return this.querySelector(kTAB_TRASH_ELEMENT_NAME);
   }
 
   applyAttributes() {

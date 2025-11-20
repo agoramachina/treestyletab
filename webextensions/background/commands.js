@@ -1486,6 +1486,59 @@ SidebarConnection.onMessage.addListener(async (windowId, message) => {
     case Constants.kCOMMAND_NEW_WINDOW_FROM_NATIVE_TAB_GROUP:
       NativeTabGroups.moveGroupToNewWindow(message);
       return;
+
+    case 'treestyletab:hibernate-tab': {
+      const tab = Tab.get(message.tabId);
+      if (!tab)
+        return;
+
+      // Store tab metadata before closing
+      const tabData = {
+        url: tab.url,
+        title: tab.title,
+        favIconUrl: tab.favIconUrl,
+        parentId: tab.$TST.parent?.id || null,
+        index: tab.index,
+        hibernatedAt: Date.now(),
+        // Preserve tree structure
+        children: tab.$TST.children.map(child => child.id)
+      };
+
+      // Store in browser.storage.local
+      const storage = await browser.storage.local.get('hibernatedTabs');
+      const hibernatedTabs = storage.hibernatedTabs || {};
+      hibernatedTabs[message.tabId] = tabData;
+      await browser.storage.local.set({ hibernatedTabs });
+
+      // Mark tab as hibernated before closing
+      tab.$TST.addState(Constants.kTAB_STATE_HIBERNATED);
+
+      // Don't actually close the tab yet - just mark it as hibernated
+      // TODO: Implement proper hibernation logic
+      log('Tab hibernated:', message.tabId, tabData);
+    }; break;
+
+    case 'treestyletab:remove-hibernated-tab': {
+      const tab = Tab.get(message.tabId);
+      if (!tab)
+        return;
+
+      // Remove from storage
+      const storage = await browser.storage.local.get('hibernatedTabs');
+      const hibernatedTabs = storage.hibernatedTabs || {};
+      delete hibernatedTabs[message.tabId];
+      await browser.storage.local.set({ hibernatedTabs });
+
+      // If tab is hibernated, just remove the element
+      // If tab is still open, close it
+      if (tab.$TST.states.has(Constants.kTAB_STATE_HIBERNATED)) {
+        // TODO: Remove the tab element from sidebar
+        log('Removing hibernated tab from list:', message.tabId);
+      } else {
+        // Close the actual tab
+        browser.tabs.remove(message.tabId).catch(ApiTabs.createErrorHandler(ApiTabs.handleMissingTabError));
+      }
+    }; break;
   }
 });
 

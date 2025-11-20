@@ -22,6 +22,8 @@ import { kTAB_FAVICON_ELEMENT_NAME } from './components/TabFaviconElement.js';
 import { kTAB_SOUND_BUTTON_ELEMENT_NAME } from './components/TabSoundButtonElement.js';
 import { kTAB_TWISTY_ELEMENT_NAME } from './components/TabTwistyElement.js';
 import { kTREE_ITEM_ELEMENT_NAME } from './components/TreeItemElement.js';
+import { kTAB_HIBERNATE_ELEMENT_NAME } from './components/TabHibernateElement.js';
+import { kTAB_TRASH_ELEMENT_NAME } from './components/TabTrashElement.js';
 
 // eslint-disable-next-line no-unused-vars
 function log(...args) {
@@ -110,6 +112,16 @@ export function isEventFiredOnSoundButton(event) {
 export function isEventFiredOnClosebox(event) {
   const target = getElementTarget(event);
   return target?.closest && !!target.closest(kTAB_CLOSE_BOX_ELEMENT_NAME);
+}
+
+export function isEventFiredOnHibernateButton(event) {
+  const target = getElementTarget(event);
+  return target?.closest && !!target.closest(kTAB_HIBERNATE_ELEMENT_NAME);
+}
+
+export function isEventFiredOnTrashButton(event) {
+  const target = getElementTarget(event);
+  return target?.closest && !!target.closest(kTAB_TRASH_ELEMENT_NAME);
 }
 
 export function isEventFiredOnNewTabButton(event) {
@@ -257,13 +269,15 @@ export function getTreeItemEventDetail(event, tab) {
 export function getMouseEventDetail(event, tab) {
   return {
     ...getTreeItemEventDetail(event, tab),
-    twisty:        isEventFiredOnTwisty(event),
-    sharingState:  isEventFiredOnSharingState(event),
-    soundButton:   isEventFiredOnSoundButton(event),
-    closebox:      isEventFiredOnClosebox(event),
-    button:        event.button,
-    isMiddleClick: isMiddleClick(event),
-    isAccelClick:  isAccelAction(event),
+    twisty:          isEventFiredOnTwisty(event),
+    sharingState:    isEventFiredOnSharingState(event),
+    soundButton:     isEventFiredOnSoundButton(event),
+    closebox:        isEventFiredOnClosebox(event),
+    hibernateButton: isEventFiredOnHibernateButton(event),
+    trashButton:     isEventFiredOnTrashButton(event),
+    button:          event.button,
+    isMiddleClick:   isMiddleClick(event),
+    isAccelClick:    isAccelAction(event),
     lastInnerScreenY: window.mozInnerScreenY,
   };
 }

@@ -59,6 +59,8 @@ import * as TSTAPIFrontend from './tst-api-frontend.js';
 import { kTAB_CLOSE_BOX_ELEMENT_NAME } from './components/TabCloseBoxElement.js';
 import { kTAB_FAVICON_ELEMENT_NAME } from './components/TabFaviconElement.js';
 import { kTAB_TWISTY_ELEMENT_NAME } from './components/TabTwistyElement.js';
+import { kTAB_HIBERNATE_ELEMENT_NAME } from './components/TabHibernateElement.js';
+import { kTAB_TRASH_ELEMENT_NAME } from './components/TabTrashElement.js';
 
 function log(...args) {
   internalLogger('sidebar/mouse-event-listener', ...args);
@@ -828,6 +830,24 @@ async function handleDefaultMouseUpOnTab({ lastMousedown, tab, event } = {}) {
           tabIds
         });
       });
+  }
+  else if (lastMousedown.detail.hibernateButton &&
+           EventUtils.isEventFiredOnHibernateButton(event)) {
+    log(`clicked on hibernate button of the tab ${tab.id}`);
+    // Hibernate the tab: close it but keep it in the list
+    BackgroundConnection.sendMessage({
+      type:  'treestyletab:hibernate-tab',
+      tabId: tab.id
+    });
+  }
+  else if (lastMousedown.detail.trashButton &&
+           EventUtils.isEventFiredOnTrashButton(event)) {
+    log(`clicked on trash button of the tab ${tab.id}`);
+    // Permanently remove the tab from the list
+    BackgroundConnection.sendMessage({
+      type:  'treestyletab:remove-hibernated-tab',
+      tabId: tab.id
+    });
   }
 
   return true;

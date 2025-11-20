@@ -230,6 +230,7 @@ export const kTAB_STATE_NEW_TAB_COMMAND_TAB       = 'newtab-command-tab';
 export const kTAB_STATE_OPENED_FOR_SAME_WEBSITE   = 'opened-for-same-website';
 export const kTAB_STATE_STICKY                    = 'sticky';
 export const kTAB_STATE_STUCK                   = 'stuck'; // virtual state
+export const kTAB_STATE_HIBERNATED                = 'hibernated'; // Tab is closed but kept in list
 export const kTAB_INTERNAL_STATES = new Set([ // TST specific states
   'tab',
   kTAB_STATE_LAST_ROW,
